@@ -31,9 +31,9 @@ while True:
     img_hsv = cv.cvtColor(img_color, cv.COLOR_BGR2HSV)
 
     ## for color detection
-    hue_blue = 120
-    lower_blue = (hue_blue-50, 200, 0)
-    upper_blue = (hue_blue+50, 255, 255)
+    hue_blue = 170 # HSV red value
+    lower_blue = (hue_blue-10, 0, 240)
+    upper_blue = (hue_blue+10, 255, 255)
 
     ## detect between lower_blue and upper_blue color
     img_mask = cv.inRange(img_hsv, lower_blue, upper_blue)
