@@ -1,14 +1,36 @@
+import sys
 import cv2 as cv # opencv __version__ 4.1.1
 from socket import *
 
+def Exit(argv, sock):
+    if argv == 1:
+        cv.destroyAllWindows()
+        print('system: main() is ended')
+        buf = sock.recv(1024)
+        print('serv msg: ', buf.decode());
+        print('system: Close client socket')
+        sock.close()
+        print('bye')
+    elif argv == 0:
+        print('Input error')
+        cv.destroyAllWindows()
+    
 # parameter 0 means main pi camera
 cap = cv.VideoCapture(0)
 
 isDraw = False # Do not draw as soon as the program starts
 
 # make socket
-addr = '192.168.35.176'
-port = 8090
+addr = sys.argv[1]
+if addr is None:
+    print("IP address is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
+    Exit(0, NULL)
+
+port = int(sys.argv[2])
+if port is None:
+    print("Port Number is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
+    Exit(0, NULL)
+
 client_sock = socket(AF_INET, SOCK_STREAM)
 client_sock.connect((addr, port))
 
@@ -27,7 +49,7 @@ while True:
 
     ## for color detection
     hue_red = 170 # HSV red value
-    lower_red = (hue_red-10, 0, 240)
+    lower_red = (hue_red-10, 0, 230)
     upper_red = (hue_red+10, 255, 255)
 
     ## detect between lower_red and upper_red color
@@ -56,14 +78,16 @@ while True:
             max_index = i
 
     if max_index != -1:
-        # make a circle and square
+        # make a circle
         center_x = int(centroids[max_index, 0]) 
         center_y = int(centroids[max_index, 1])
-        #left = stats[max_index, cv.CC_STAT_LEFT]
-        #top = stats[max_index, cv.CC_STAT_TOP]
-        #width = stats[max_index, cv.CC_STAT_WIDTH]
-        #height = stats[max_index, cv.CC_STAT_HEIGHT]
-
+        '''
+        # make a square
+        left = stats[max_index, cv.CC_STAT_LEFT]
+        top = stats[max_index, cv.CC_STAT_TOP]
+        width = stats[max_index, cv.CC_STAT_WIDTH]
+        height = stats[max_index, cv.CC_STAT_HEIGHT]
+        '''
         #cv.rectangle(img_color, (left, top), (left + width, top + height), (0, 0, 255), 5)
         cv.circle(img_color, (center_x, center_y), 10, (0, 255, 0), -1)
 
@@ -71,20 +95,13 @@ while True:
         client_sock.send((str(center_x)+','+str(center_y)+']').encode())
 
         # create window and show the result
-        cv.imshow('Binarization', img_mask)
-        cv.imshow('Result', img_color)
+    cv.imshow('Binarization', img_mask)
+    cv.imshow('Result', img_color)
 
-        # Using keyboard function for break
-        key = cv.waitKey(1)
-        if key == 27: # esc
-            client_sock.send('quit'.encode())
-            break
+    # Using keyboard function for break
+    key = cv.waitKey(1)
+    if key == 27: # esc
+        client_sock.send('quit'.encode())
+        break
 
-cv.destroyAllWindows()
-print('system: main() is ended')
-buf = client_sock.recv(1024)
-print('serv msg: ', buf.decode());
-print('system: Close client socket')
-client_sock.close()
-print('bye')
-
+Exit(1, client_sock)
