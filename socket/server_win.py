@@ -4,14 +4,12 @@ import numpy as np
 import pyautogui
 #import time
 def draw_ball_location(img_color, locations):
-    print("Enter the function")
     for i in range(len(locations) - 1):
         # if locations is empty
         if locations[0] is None or locations[1] is None:
             continue
         # draw each coordinates in locations on window
         # BGR of yellow = (0, 255, 255)
-        print("draw something")
         cv.line(img_color, tuple(locations[i]), tuple(locations[i+1]), (0, 255, 255), 3)
 
 
@@ -28,33 +26,8 @@ def Connect_to_client(sock):
     print(str(addr), "tried to connect.")
     return conn
 
-def String_processing(sdata):
-    # list values to str
-    string = ''.join(sdata)
-    
-    print(string)
-    print(type(string))
-
-    if 'quit' in string:
-        return -1, -1
-    
-    coor = string.split(']')
-    '''
-    if len(coor) <= 1:
-    '''    
-     
-    string_coor = ''.join(coor)
-    center = string_coor.split(',')
-    center_x = int(center[0])
-    center_y = int(center[1])
-    print("center_x, center_y", center_x, center_y)
-    print("\n")
-
-    return center_x, center_y
-        
-
 address = '0.0.0.0'
-port = 8090
+port = 8099
 
 server_sock = Bind_n_listen(address, port)
 conn_sock = Connect_to_client(server_sock)
@@ -66,22 +39,11 @@ isDraw = True
 
 File = open("./log.txt", mode='w', encoding='utf-8')
 
-cv.namedWindow("Window")
-cv.moveWindow("Window", 960, 0)
-
 while True:
-    '''
-    # take a screenshot using base picture
-    pic = pyautogui.screenshot(region=(0, 0, 1000, 960))
-    #pic = pyautogui.screenshot()
-    img_frame = np.array(pic)
-    img_frame = cv.cvtColor(img_frame, cv.COLOR_RGB2BGR)
-    '''
     while True:
-        
         # take a screenshot using base picture
         pic = pyautogui.screenshot(region=(0, 0, 1000, 960))
-        #pic = pyautogui.screenshot()
+        #pic = pyautogui.screenshot(region=(0, 25, 1900, 960))
         img_frame = np.array(pic)
         img_frame = cv.cvtColor(img_frame, cv.COLOR_RGB2BGR)
         
@@ -99,8 +61,6 @@ while True:
             center_y = int(center[1])
             list_ball_location.append((center_x, center_y))
         '''
-        center_x, center_y = String_processing(data)
-        
         if center_x == -1 and  center_y == -1:
             break
         '''
@@ -109,8 +69,6 @@ while True:
         fdata = fdata + ', ' + "%d" % center_y
         File.write(fdata + '\n')
         
-        #list_ball_location.append((center_x, center_y))
-
         '''
         if isDraw:
             list_ball_location.append((center_x, center_y))
@@ -124,6 +82,9 @@ while True:
             draw_ball_location(img_frame, ball_locations)
         '''
         draw_ball_location(img_frame, list_ball_location)
+
+        cv.namedWindow("Window")
+        cv.moveWindow("Window", 0, 10)
         cv.imshow('Window', img_frame)
 
         key = cv.waitKey(1)
