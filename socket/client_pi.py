@@ -1,7 +1,7 @@
 from socket import *
 
 client_sock = socket(AF_INET, SOCK_STREAM)
-client_sock.connect(('192.168.35.176', 8081))
+client_sock.connect(('192.168.35.176', 8090))
 
 print('connection success')
 client_sock.send(str('I am client').encode())
