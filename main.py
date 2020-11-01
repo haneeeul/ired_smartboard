@@ -1,42 +1,59 @@
-# from https://webnautes.tistory.com
-import cv2 as cv # opencv __version__ 4.2.0
+import sys
+import cv2 as cv # opencv __version__ 4.1.1
+from socket import *
 
-# draw coordinate using cv2.line()
-def draw_ball_location(img_color, locations):
-    for i in range(len(locations) - 1):
-        # if locations is empty
-        if locations[0] is None or locations[1] is None:
-            continue
-
-        # draw each coordinates in locations on window
-        # BGR of yellow = (0, 255, 255)
-        cv.line(img_color, tuple(locations[i]), tuple(locations[i+1]), (0, 255, 0), 3)
-
-# parameter 0 means main web camera
+def Exit(argv, sock):
+    if argv == 1:
+        cv.destroyAllWindows()
+        print('system: main() is ended')
+        buf = sock.recv(1024)
+        print('serv msg: ', buf.decode());
+        print('system: Close client socket')
+        sock.close()
+        print('bye')
+    elif argv == 0:
+        print('Input error')
+        cv.destroyAllWindows()
+    
+# parameter 0 means main pi camera
 cap = cv.VideoCapture(0)
 
-list_ball_location = []
-history_ball_locations = []
 isDraw = False # Do not draw as soon as the program starts
+
+# make socket
+addr = sys.argv[1]
+if addr is None:
+    print("IP address is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
+    Exit(0, NULL)
+
+port = int(sys.argv[2])
+if port is None:
+    print("Port Number is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
+    Exit(0, NULL)
+
+client_sock = socket(AF_INET, SOCK_STREAM)
+client_sock.connect((addr, port))
+
+print('connection success')
+#client_sock.send(str('client: connection is okay').encode())
+if not cap.isOpened():
+    cap.open()
 
 # __main()__
 while True:
     # loading video
     ret,img_color = cap.read()
 
-    # it doesn't work on version 4.2.0
-    # img_color = cv.filp(img_color,1)
-
     # make video colorful. Using parameter cv2.COLOT_BGR@HSV
     img_hsv = cv.cvtColor(img_color, cv.COLOR_BGR2HSV)
 
     ## for color detection
-    hue_blue = 170 # HSV red value
-    lower_blue = (hue_blue-10, 0, 240)
-    upper_blue = (hue_blue+10, 255, 255)
+    hue_red = 150 # HSV
+    lower_red = (hue_red - 10, 0, 200)
+    upper_red = (hue_red + 10, 255, 255)
 
-    ## detect between lower_blue and upper_blue color
-    img_mask = cv.inRange(img_hsv, lower_blue, upper_blue)
+    ## detect between lower_red and upper_red color
+    img_mask = cv.inRange(img_hsv, lower_red, upper_red)
 
     # make circle structuring element for segmentation
     kernel = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
@@ -61,41 +78,26 @@ while True:
             max_index = i
 
     if max_index != -1:
-        # make a circle and square
+        # make a circle
         center_x = int(centroids[max_index, 0]) 
         center_y = int(centroids[max_index, 1])
-        left = stats[max_index, cv.CC_STAT_LEFT]
-        top = stats[max_index, cv.CC_STAT_TOP]
-        width = stats[max_index, cv.CC_STAT_WIDTH]
-        height = stats[max_index, cv.CC_STAT_HEIGHT]
-
-        cv.rectangle(img_color, (left, top), (left + width, top + height), (0, 0, 255), 5)
+        hsv = img_hsv[0][0]
+        print("hsv: ", hsv)
+        
+        #cv.rectangle(img_color, (left, top), (left + width, top + height), (0, 0, 255), 5)
         cv.circle(img_color, (center_x, center_y), 10, (0, 255, 0), -1)
 
-        # if isDraw is True, append the center coordinate of detected stuff
-        if isDraw:
-            list_ball_location.append((center_x, center_y))
-        # if isDraw is False, saving last coordinate and all clear
-        else:
-            history_ball_locations.append(list_ball_location.copy())
-            list_ball_location.clear()
-
-        # draw a line based on coordinate
-        draw_ball_location(img_color, list_ball_location)
-
-        for ball_locations in history_ball_locations:
-            draw_ball_location(img_color, ball_locations)
+        # send coordinate x and y
+        client_sock.send((str(center_x)+','+str(center_y)+']').encode())
 
         # create window and show the result
-        cv.imshow('Binarization', img_mask)
-        cv.imshow('Result', img_color)
+    cv.imshow('Binarization', img_mask)
+    cv.imshow('Result', img_color)
 
-        # Using keyboard function for drawing or not or clear all
-        key = cv.waitKey(1)
-        if key == 27: # esc
-            break
-        elif key == 32: # space bar
-            list_ball_location.clear()
-            history_ball_locations.clear()
-        elif key == ord('v'):
-            isDraw = not isDraw
+    # Using keyboard function for break
+    key = cv.waitKey(1)
+    if key == 27: # esc
+        client_sock.send('quit'.encode())
+        break
+
+Exit(1, client_sock)
