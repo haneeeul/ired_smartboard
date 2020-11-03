@@ -11,25 +11,18 @@ def Exit(argv, sock):
         print('system: Close client socket')
         sock.close()
         print('bye')
-    elif argv == 0:
-        print('Input error')
-        cv.destroyAllWindows()
     
 # parameter 0 means main pi camera
 cap = cv.VideoCapture(0)
 
 # socket
-if len(sys.argv[1]) < 1:
-    print("IP address is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
-    Exit(0, NULL)
+if len(sys.argv) < 3:
+    print("ERROR!\nUsage: python3opencv main.py <IP address> <Port>")
+    cv.destroyAllWindows()
+    exit()
 else:
     addr = sys.argv[1]
-)
-if len(argv[2]) < 1:
-    print("Port Number is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
-    Exit(0, NULL)
-else:
-    port = int(argv[2])
+    port = int(sys.argv[2])
 
 client_sock = socket(AF_INET, SOCK_STREAM)
 client_sock.connect((addr, port))
