@@ -18,24 +18,23 @@ def Exit(argv, sock):
 # parameter 0 means main pi camera
 cap = cv.VideoCapture(0)
 
-isDraw = False # Do not draw as soon as the program starts
-
-# make socket
-addr = sys.argv[1]
-if addr is None:
+# socket
+if len(sys.argv[1]) < 1:
     print("IP address is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
     Exit(0, NULL)
-
-port = int(sys.argv[2])
-if port is None:
+else:
+    addr = sys.argv[1]
+)
+if len(argv[2]) < 1:
     print("Port Number is mandatory!\nUsage: python3opencv main.py <IP address> <Port>")
     Exit(0, NULL)
+else:
+    port = int(argv[2])
 
 client_sock = socket(AF_INET, SOCK_STREAM)
 client_sock.connect((addr, port))
-
 print('connection success')
-#client_sock.send(str('client: connection is okay').encode())
+
 if not cap.isOpened():
     cap.open()
 
@@ -53,6 +52,7 @@ while True:
     upper_red = (hue_red + 10, 255, 255)
 
     ## detect between lower_red and upper_red color
+    ## if color of pixel is not in range between lower_red and upper_red, is black 
     img_mask = cv.inRange(img_hsv, lower_red, upper_red)
 
     # make circle structuring element for segmentation
@@ -67,7 +67,7 @@ while True:
     max_index = -1
 
     for i in range(nlabels):
-
+        
         if i < 1:
             continue
 
@@ -81,16 +81,13 @@ while True:
         # make a circle
         center_x = int(centroids[max_index, 0]) 
         center_y = int(centroids[max_index, 1])
-        hsv = img_hsv[0][0]
-        print("hsv: ", hsv)
         
-        #cv.rectangle(img_color, (left, top), (left + width, top + height), (0, 0, 255), 5)
         cv.circle(img_color, (center_x, center_y), 10, (0, 255, 0), -1)
 
         # send coordinate x and y
         client_sock.send((str(center_x)+','+str(center_y)+']').encode())
 
-        # create window and show the result
+    # create window and show the result
     cv.imshow('Binarization', img_mask)
     cv.imshow('Result', img_color)
 
