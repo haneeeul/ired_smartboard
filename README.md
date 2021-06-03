@@ -8,7 +8,7 @@
 
 * [H/W 구성 요소](#H/W_구성_요소)
 
-* [Required](#Required_env:)
+* [Required](#Required)
 
 * [Command](#Command)
 
@@ -34,7 +34,7 @@
 
 <br>
 
-### __Required env:__
+### __Required__
 프로그램 실행을 위한 버전과 운영체제를 반드시 확인하세요.
 
     python >= 3.x
